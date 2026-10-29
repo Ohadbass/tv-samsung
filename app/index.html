@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="only light">
+<title>Basson Residence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@300;400;500&family=Heebo:wght@400;500;600&family=Cormorant+Garamond:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --gold:#a8833f; --gold-deep:#8a6a2e; --navy:#1f4e6e;
+  --glass:rgba(255,255,255,.34); --glass-focus:rgba(255,255,255,.72);
+  color-scheme:only light;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;background:#8fc3e3}
+body{
+  background:#8fc3e3 url("bg.jpg") center/cover no-repeat;
+  font-family:"Frank Ruhl Libre","David","Times New Roman",serif;
+  color:var(--navy);
+}
+.side{
+  position:absolute; top:9vh; right:4.5vw; width:22vw;
+  text-align:right;
+  text-shadow:0 0 1.2vw rgba(255,255,255,.85), 0 0 .3vw rgba(255,255,255,.9);
+}
+.greet{font-weight:400; font-size:2.6vw; line-height:1.15; color:var(--navy)}
+.name{font-weight:500; font-size:3.4vw; line-height:1.1; color:var(--gold-deep); margin-top:.3vw}
+.room{
+  font-family:"Cormorant Garamond",serif; font-weight:600; font-size:1.5vw;
+  letter-spacing:.32em; color:var(--navy); margin-top:1.4vw; direction:ltr; text-align:right;
+}
+.rule{width:5vw;height:1px;background:var(--gold);margin:1.6vw 0 1.4vw auto}
+.clock{
+  font-family:"Cormorant Garamond",serif; font-weight:500; font-size:5.2vw;
+  line-height:1; color:var(--navy); direction:ltr; text-align:right;
+  font-variant-numeric:lining-nums tabular-nums;
+}
+.date{font-size:1.25vw; margin-top:.6vw; color:var(--navy)}
+.apps{
+  position:absolute; bottom:3.5vh; left:50%; transform:translateX(-50%);
+  display:flex; direction:rtl; align-items:center;
+}
+.app{
+  width:10vw; height:6vw; border-radius:1.1vw;
+  background:var(--glass); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+  border:1px solid rgba(255,255,255,.6);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  color:var(--navy); text-decoration:none; font-family:inherit; font-size:1.35vw; cursor:pointer; margin:0 .8vw;
+  transition:transform .25s ease, background .25s ease, box-shadow .25s ease;
+}
+.app svg{width:2.3vw;height:2.3vw}
+.app:focus,.app:hover{
+  outline:none; background:var(--glass-focus); transform:scale(1.08);
+  box-shadow:0 0 0 .22vw var(--gold), 0 1vw 2.4vw rgba(20,60,90,.25);
+}
+
+.app .lbl{font-size:1.2vw;line-height:1.1;margin-top:.4vw}
+.music{width:3.6vw;height:3.6vw;border-radius:50%}
+.music svg{width:1.6vw;height:1.6vw}
+.music.off{opacity:.55}
+/* rss news ticker */
+.rss-btn{
+  width:auto; height:auto; padding:.25vw .6vw; border-radius:.5vw; margin-inline-start:.6vw;
+  font-family:"Cormorant Garamond",serif; font-size:.95vw; letter-spacing:.08em; direction:ltr;
+  background:transparent; border:1px solid transparent; opacity:.35;
+}
+.rss-btn.on{opacity:.75}
+.rss-btn:focus,.rss-btn:hover{opacity:1}
+.ticker{
+  position:absolute; top:0; left:0; right:0; height:6.2vh; z-index:4;
+  display:flex; align-items:center; overflow:hidden; direction:rtl;
+  background:rgba(255,255,255,.55); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
+  border-bottom:1px solid rgba(168,131,63,.55);
+  transform:translateY(-100%); transition:transform .5s ease;
+}
+.ticker.show{transform:none}
+.ticker .tag{
+  flex:none; height:100%; display:flex; align-items:center; padding:0 1.2vw;
+  background:var(--navy); color:#fff; font-family:"Heebo",Arial,sans-serif; font-size:1.45vw; font-weight:600; z-index:1;
+}
+.ticker .track{flex:1; overflow:hidden; height:100%; position:relative}
+.ticker .run{
+  position:absolute; top:0; height:100%; display:flex; align-items:center; white-space:nowrap;
+  font-family:"Heebo",Arial,sans-serif; font-size:1.75vw; font-weight:500; color:var(--navy); right:0; will-change:transform;
+}
+.ticker .run b{color:var(--gold-deep); font-weight:600; margin:0 .6vw 0 .4vw}
+.ticker .run i{font-style:normal; color:var(--gold); margin:0 1.4vw}
+@media (prefers-reduced-motion:reduce){.app{transition:none}.app:focus,.app:hover{transform:none}}
+</style>
+</head>
+<body>
+<div class="ticker" id="ticker" aria-live="polite"><div class="tag">מבזקי ynet</div><div class="track"><div class="run" id="tickerRun"></div></div></div>
+<div class="side" aria-live="polite">
+  <div class="greet" id="greet">ערב טוב</div>
+  <div class="name">אוהד בסון</div>
+  <div class="room" id="room">LIVING ROOM</div>
+  <div class="rule"></div>
+  <div class="clock" id="clock">00:00</div>
+  <div class="date" id="date"></div>
+</div>
+
+<nav class="apps">
+  <a class="app" href="#" data-key="youtube" data-tid="9Ur5IzDKqV.TizenYouTube" data-sid="111299001912" data-match="youtube|יוטיוב"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="5" y="11" width="38" height="26" rx="8"/><path d="M20 18l10 6-10 6z" fill="currentColor"/></svg><span class="lbl">יוטיוב</span></a>
+  <a class="app" href="#" data-key="keshet" data-tid="" data-sid="3201506003716" data-match="mako|keshet|קשת|+12|12+|12 plus"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="24" cy="24" r="4" fill="currentColor"/><path d="M15 15a13 13 0 0 0 0 18M33 15a13 13 0 0 1 0 18M9 9a21 21 0 0 0 0 30M39 9a21 21 0 0 1 0 30"/></svg><span class="lbl">קשת 12</span></a>
+  <a class="app" href="#" data-key="kan" data-tid="" data-sid="3201803015997" data-match="kan|כאן"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="24" cy="24" r="4" fill="currentColor"/><path d="M15 15a13 13 0 0 0 0 18M33 15a13 13 0 0 1 0 18M9 9a21 21 0 0 0 0 30M39 9a21 21 0 0 1 0 30"/></svg><span class="lbl">כאן BOX</span></a>
+  <a class="app" href="#" data-key="reshet" data-tid="" data-sid="3201812017600" data-match="reshet|רשת|13tv|13 now"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="24" cy="24" r="4" fill="currentColor"/><path d="M15 15a13 13 0 0 0 0 18M33 15a13 13 0 0 1 0 18M9 9a21 21 0 0 0 0 30M39 9a21 21 0 0 1 0 30"/></svg><span class="lbl">רשת 13</span></a>
+  <a class="app" href="#" data-key="netflix" data-tid="org.tizen.netflixapp" data-sid="3201907018807" data-match="netflix"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2"><rect x="10" y="8" width="28" height="32" rx="3"/><path d="M18 8v32M30 8v32"/></svg><span class="lbl">Netflix</span></a>
+  <a class="app music" href="#" id="music" aria-label="מוזיקה"><svg viewBox="0 0 48 48" fill="currentColor"><path d="M18 8v24.5A7 7 0 1 0 22 39V18l18-4v14.5A7 7 0 1 0 44 35V4z"/></svg></a>
+  <a class="app rss-btn" href="#" id="rssBtn" aria-label="מבזקי חדשות">rss</a>
+</nav>
+
+<script>
+const greetEl=document.getElementById('greet'),clockEl=document.getElementById('clock'),dateEl=document.getElementById('date');
+function tick(){
+  const d=new Date(),h=d.getHours();
+  greetEl.textContent = h>=5&&h<12 ? 'בוקר טוב' : h>=12&&h<17 ? 'צהריים טובים' : 'ערב טוב';
+  clockEl.textContent = String(h).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+  dateEl.textContent = d.toLocaleDateString('he-IL',{weekday:'long',day:'numeric',month:'long'});
+}
+tick(); setInterval(tick,10000);
+
+/* ---------- Lounge radio (SomaFM, listener-supported, no ads) ---------- */
+const HOSTS=['ice1','ice2','ice4','ice6'];
+const STATIONS=[
+  {name:'Groove Salad', id:'groovesalad'},
+  {name:'Lush',         id:'lush'},
+  {name:'Secret Agent', id:'secretagent'}
+];
+const VOL=.35;
+let st=0, hostIdx=0, musicOn=true, fadeT=null, playing=false;
+const audio=new Audio(); audio.preload='none'; audio.volume=0;
+const toast=document.createElement('div');
+toast.style.cssText='position:absolute;z-index:3;bottom:15vh;left:4.5vw;max-width:30vw;font-family:"Frank Ruhl Libre",serif;font-size:1.3vw;color:var(--navy);text-shadow:0 0 .8vw #fff,0 0 .3vw #fff;opacity:0;transition:opacity .4s';
+document.body.appendChild(toast);
+function showToast(t,ms){ toast.textContent=t; toast.style.opacity=1; clearTimeout(toast._t); toast._t=setTimeout(()=>toast.style.opacity=0,ms||2500); }
+function fadeTo(v,ms,done){
+  clearInterval(fadeT);
+  const from=audio.volume, steps=Math.max(1,Math.round(ms/50)); let i=0;
+  fadeT=setInterval(()=>{ i++; audio.volume=Math.min(1,Math.max(0,from+(v-from)*i/steps));
+    if(i>=steps){clearInterval(fadeT); done&&done();} },50);
+}
+function streamUrl(){ return 'https://'+HOSTS[hostIdx]+'.somafm.com/'+STATIONS[st].id+'-128-mp3'; }
+function startMusic(){
+  if(!musicOn || playing) return;
+  playing=true;
+  audio.src=streamUrl(); audio.volume=0;
+  audio.play().then(()=>fadeTo(VOL,3000)).catch(err=>{
+    playing=false;
+    if(err && err.name==='NotAllowedError') showToast('לחצו על מקש כלשהו להפעלת המוזיקה',4000);
+  });
+}
+function hardStop(){ audio.pause(); audio.removeAttribute('src'); audio.load(); playing=false; }
+function stopMusic(fast){ if(!playing) return; fadeTo(0,fast?300:1200,hardStop); }
+audio.addEventListener('error',()=>{
+  if(!audio.getAttribute('src')) return;
+  playing=false;
+  hostIdx=(hostIdx+1)%HOSTS.length;
+  if(hostIdx===0){ showToast('אין חיבור לרדיו כרגע, מנסה שוב…',3000); setTimeout(startMusic,15000); }
+  else startMusic();
+});
+const musicBtn=document.getElementById('music');
+musicBtn.addEventListener('click',e=>{
+  e.preventDefault(); e.stopPropagation();
+  if(!musicOn){ musicOn=true; st=0; }
+  else if(playing && st<STATIONS.length-1){ st++; }
+  else if(playing){ musicOn=false; }
+  musicBtn.classList.toggle('off',!musicOn);
+  clearInterval(fadeT); hardStop(); startMusic();
+  showToast(musicOn ? '♪ '+STATIONS[st].name : 'מוזיקה כבויה');
+});
+// any interaction unlocks audio (browsers block sound until the first click/key)
+['pointerdown','keydown','touchstart'].forEach(ev=>document.addEventListener(ev,()=>startMusic(),{passive:true}));
+document.addEventListener('visibilitychange',()=>document.hidden?stopMusic(true):startMusic());
+window.addEventListener('load',()=>setTimeout(startMusic,600));
+
+
+/* ---------- ynet news ticker ---------- */
+const RSS_URL='https://www.ynet.co.il/Integration/StoryRss1854.xml';
+const NEWS_JSON='https://ohadbass.github.io/tv/news.json';
+const ticker=document.getElementById('ticker'), run=document.getElementById('tickerRun'), rssBtn=document.getElementById('rssBtn');
+let newsOn=false, newsTimer=null, anim=null;
+function esc(s){return String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+function hhmm(d){ d=new Date(d); return isNaN(d)?'':String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
+async function fetchNews(){
+  try{ // 1) direct RSS (works if the TV browser allows it)
+    const r=await fetch(RSS_URL,{cache:'no-store'}); const x=new DOMParser().parseFromString(await r.text(),'text/xml');
+    const items=[].slice.call(x.querySelectorAll('item'),0,15).map(function(it){ var t=it.querySelector('title'), p=it.querySelector('pubDate'); return {title:t&&t.textContent?t.textContent.trim():'', time:hhmm(p&&p.textContent)}; });
+    if(items.length) return items;
+  }catch(e){}
+  try{ // 2) copy refreshed every few minutes on GitHub
+    const r=await fetch(NEWS_JSON+'?t='+Date.now(),{cache:'no-store'}); const j=await r.json();
+    return (j.items||[]).slice(0,15);
+  }catch(e){}
+  return null;
+}
+function playTicker(items){
+  if(anim) anim.cancel();
+  run.innerHTML = items && items.length
+    ? items.filter(i=>i.title).map(i=>(i.time?'<b>'+esc(i.time)+'</b>':'')+esc(i.title)).join('<i>◆</i>')
+    : 'אין חיבור למבזקים כרגע';
+  const trackW=run.parentElement.offsetWidth, w=run.scrollWidth;
+  // Hebrew ticker: text enters from the left edge and moves right
+  // slow, readable pace: ~2.5% of the screen width per second, whatever the TV resolution
+  const pxPerSec=window.innerWidth*0.025;
+  const dur=Math.max(30000,(w+trackW)/pxPerSec*1000);
+  anim=run.animate([{transform:'translateX('+(-trackW)+'px)'},{transform:'translateX('+w+'px)'}],{duration:dur,iterations:Infinity,easing:'linear'});
+}
+async function refreshNews(){ if(!newsOn) return; playTicker(await fetchNews()); }
+function setNews(on){
+  newsOn=on; ticker.classList.toggle('show',on); rssBtn.classList.toggle('on',on);
+  try{ localStorage.setItem('newsOn',on?'1':'0'); }catch(e){}
+  clearInterval(newsTimer);
+  if(on){ refreshNews(); newsTimer=setInterval(refreshNews,10*60*1000); } else if(anim){ anim.cancel(); }
+}
+rssBtn.addEventListener('click',e=>{e.preventDefault(); e.stopPropagation(); setNews(!newsOn);});
+try{ if(localStorage.getItem('newsOn')==='1') window.addEventListener('load',()=>setNews(true)); }catch(e){}
+
+/* ---------- Room name (?room=) ---------- */
+(function(){
+  var q=location.search.match(/[?&]room=([^&]*)/);
+  var room=q?decodeURIComponent(q[1].replace(/\+/g,' ')).trim():'LIVING ROOM';
+  if(!room) room='LIVING ROOM';
+  var el=document.getElementById('room');
+  if(el) el.textContent=room.toUpperCase();
+  document.title='Basson Residence · '+room;
+})();
+
+/* ---------- TizenBrew native app launch ---------- */
+var SERVICE={module:'gh/Ohadbass/tv-samsung@v1.0.0',port:8098};
+var MODULE=(function(){
+  var p=location.pathname.split('/');
+  return p[1]==='module'&&p[2]?decodeURIComponent(p[2]):SERVICE.module;
+})();
+function serviceUrl(path){ return 'http://127.0.0.1:'+SERVICE.port+path; }
+
+function startModuleService(){
+  try{
+    var ws=new WebSocket('ws://127.0.0.1:8081');
+    ws.onopen=function(){ ws.send(JSON.stringify({type:4})); };
+    ws.onmessage=function(ev){
+      var msg=JSON.parse(ev.data);
+      if(msg.type===4){
+        ws.send(JSON.stringify({type:6,payload:{fullName:SERVICE.module,name:SERVICE.module.replace(/^gh\//,''),serviceFile:'service/service.js'}}));
+        setTimeout(function(){ try{ws.close();}catch(e){} mapInstalledApps(); },1200);
+      }
+    };
+    ws.onerror=function(){ mapInstalledApps(); };
+  }catch(e){ mapInstalledApps(); }
+}
+
+function setAutoLaunch(module){
+  try{
+    var ws=new WebSocket('ws://127.0.0.1:8081');
+    ws.onopen=function(){
+      ws.send(JSON.stringify({type:10,payload:{action:'autolaunch',module:module||MODULE}}));
+      setTimeout(function(){ try{ws.close();}catch(e){} },400);
+    };
+  }catch(e){}
+}
+
+function nameHits(app, patterns){
+  var blob=((app.name||'')+' '+(app.id||'')).toLowerCase();
+  var parts=patterns.split('|');
+  for(var i=0;i<parts.length;i++){
+    if(parts[i] && blob.indexOf(parts[i].toLowerCase())!==-1) return true;
+  }
+  return false;
+}
+
+function pickApp(list, patterns, sid, tid){
+  var i, a;
+  for(i=0;i<list.length;i++){
+    a=list[i];
+    if(tid && a.id===tid) return a;
+    if(sid && a.id===sid) return a;
+  }
+  for(i=0;i<list.length;i++){
+    a=list[i];
+    if(a.show===false) continue;
+    if(nameHits(a, patterns)) return a;
+  }
+  return null;
+}
+
+function mapInstalledApps(){
+  fetch(serviceUrl('/apps')).then(function(r){ return r.json(); }).then(function(j){
+    var list=(j && j.apps) || [];
+    var iptv=null;
+    appButtons.forEach(function(btn){
+      var hit=pickApp(list, btn.getAttribute('data-match')||'', btn.getAttribute('data-sid'), btn.getAttribute('data-tid'));
+      if(hit){
+        btn.setAttribute('data-tid', hit.id);
+        btn.removeAttribute('data-missing');
+      }else{
+        btn.setAttribute('data-missing','1');
+      }
+    });
+    for(var i=0;i<list.length;i++){
+      var n=((list[i].name||'')+' '+(list[i].id||'')).toLowerCase();
+      if(/televizo|ottplay|smartiptv|smarters|smartone|tivimate|ssiptv|ss-iptv|gse iptv/.test(n)){ iptv=list[i]; break; }
+    }
+    if(iptv) showToast('IPTV: '+iptv.name, 4000);
+  }).catch(function(){});
+}
+
+function launchNative(btn){
+  var id=btn.getAttribute('data-tid') || btn.getAttribute('data-sid');
+  if(!id || btn.getAttribute('data-missing')==='1'){
+    showToast('האפליקציה לא מותקנת על הטלוויזיה', 3000);
+    return;
+  }
+  fetch(serviceUrl('/launch/'+encodeURIComponent(id))).then(function(r){ return r.json(); }).then(function(j){
+    if(!j || !j.ok){
+      var sid=btn.getAttribute('data-sid');
+      if(sid && sid!==id){
+        return fetch(serviceUrl('/launch/'+encodeURIComponent(sid))).then(function(r2){ return r2.json(); });
+      }
+      showToast('לא ניתן לפתוח', 3000);
+    }
+  }).catch(function(){ showToast('השירות לא רץ — פתחו מ-TizenBrew', 3500); });
+}
+
+var apps=[].slice.call(document.querySelectorAll('.app'));
+var appButtons=apps.filter(function(a){ return a.getAttribute('data-key'); });
+appButtons.forEach(function(a){
+  a.addEventListener('click', function(e){
+    e.preventDefault();
+    stopMusic(true);
+    var btn=a;
+    setTimeout(function(){ launchNative(btn); }, 250);
+  });
+});
+document.addEventListener('keydown', function(e){
+  var i=apps.indexOf(document.activeElement);
+  if(e.key==='ArrowLeft'){ apps[Math.min(apps.length-1, i<0?0:i+1)].focus(); e.preventDefault(); }
+  if(e.key==='ArrowRight'){ apps[Math.max(0, i<0?0:i-1)].focus(); e.preventDefault(); }
+  if(i<0 && (e.key.indexOf('Arrow')===0 || e.key==='Enter')){ apps[0].focus(); e.preventDefault(); }
+});
+window.addEventListener('load', function(){
+  apps[0].focus();
+  startModuleService();
+  setAutoLaunch(MODULE);
+  fetch(serviceUrl('/health')).then(function(){ mapInstalledApps(); }).catch(function(){ startModuleService(); });
+});
+</script>
+</body>
+</html>
