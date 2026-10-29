@@ -229,7 +229,7 @@ try{ if(localStorage.getItem('newsOn')==='1') window.addEventListener('load',()=
 })();
 
 /* ---------- TizenBrew native app launch ---------- */
-var SERVICE={module:'gh/Ohadbass/tv-samsung@v1.0.0',port:8098};
+var SERVICE={module:'gh/Ohadbass/tv-samsung@v1.0.1',port:8099};
 var MODULE=(function(){
   var p=location.pathname.split('/');
   return p[1]==='module'&&p[2]?decodeURIComponent(p[2]):SERVICE.module;
@@ -243,7 +243,7 @@ function startModuleService(){
     ws.onmessage=function(ev){
       var msg=JSON.parse(ev.data);
       if(msg.type===4){
-        ws.send(JSON.stringify({type:6,payload:{fullName:SERVICE.module,name:SERVICE.module.replace(/^gh\//,''),serviceFile:'service/service.js'}}));
+        ws.send(JSON.stringify({type:6,payload:{fullName:MODULE,name:MODULE.replace(/^gh\//,''),serviceFile:'service/service.js'}}));
         setTimeout(function(){ try{ws.close();}catch(e){} mapInstalledApps(); },1200);
       }
     };
@@ -252,13 +252,19 @@ function startModuleService(){
 }
 
 function setAutoLaunch(module){
-  try{
-    var ws=new WebSocket('ws://127.0.0.1:8081');
-    ws.onopen=function(){
-      ws.send(JSON.stringify({type:10,payload:{action:'autolaunch',module:module||MODULE}}));
-      setTimeout(function(){ try{ws.close();}catch(e){} },400);
-    };
-  }catch(e){}
+  var name=module||MODULE;
+  function send(){
+    try{
+      var ws=new WebSocket('ws://127.0.0.1:8081');
+      ws.onopen=function(){
+        ws.send(JSON.stringify({type:10,payload:{action:'autolaunch',module:name}}));
+        setTimeout(function(){ try{ws.close();}catch(e){} },400);
+      };
+    }catch(e){}
+  }
+  send();
+  setTimeout(send,1500);
+  setTimeout(send,4000);
 }
 
 function nameHits(app, patterns){

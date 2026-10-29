@@ -4,8 +4,11 @@
 var http = require('http');
 var urlLib = require('url');
 
-var PORT = 8098;
+var PORT = 8099;
 var HAS_TIZEN = typeof tizen !== 'undefined' && tizen.application;
+var CONFIG_PATH = '/home/owner/share/tizenbrewConfig.json';
+var MODULE_NEEDLE = 'Ohadbass/tv-samsung';
+var MODULE_FALLBACK = 'gh/Ohadbass/tv-samsung@v1.0.1';
 
 function cors(res, code, obj) {
   res.writeHead(code, {
@@ -96,5 +99,62 @@ var server = http.createServer(function (req, res) {
   cors(res, 404, { ok: false, error: 'not found' });
 });
 
+function claimAutolaunch() {
+  var fs;
+  try { fs = require('fs'); } catch (e) { fs = null; }
+  var fullName = MODULE_FALLBACK;
+  var cfg = null;
+  if (fs) {
+    try { cfg = JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8')); } catch (e) { cfg = null; }
+  }
+  if (cfg && cfg.modules) {
+    var i;
+    for (i = 0; i < cfg.modules.length; i++) {
+      if (String(cfg.modules[i]).indexOf(MODULE_NEEDLE) !== -1) {
+        fullName = cfg.modules[i];
+        break;
+      }
+    }
+  }
+  var shortName = fullName.indexOf('/') >= 0 ? fullName.substring(fullName.indexOf('/') + 1) : fullName;
+  if (fs) {
+    if (!cfg) {
+      cfg = { modules: [fullName], autoLaunchServiceList: [], autoLaunchModule: '' };
+    }
+    var changed = cfg.autoLaunchModule !== fullName;
+    cfg.autoLaunchModule = fullName;
+    var list = cfg.autoLaunchServiceList || [];
+    var has = false;
+    var j;
+    for (j = 0; j < list.length; j++) {
+      if (list[j] === shortName || list[j] === fullName) has = true;
+    }
+    if (!has) {
+      list.push(shortName);
+      cfg.autoLaunchServiceList = list;
+      changed = true;
+    }
+    if (changed) {
+      try { fs.writeFileSync(CONFIG_PATH, JSON.stringify(cfg, null, 4)); } catch (e) {}
+    }
+  }
+  var WS = null;
+  try { WS = require('ws-new'); } catch (e1) {
+    try { WS = require('ws-old'); } catch (e2) {
+      try { WS = require('ws'); } catch (e3) { WS = null; }
+    }
+  }
+  if (!WS) return;
+  try {
+    var ws = new WS('ws://127.0.0.1:8081');
+    ws.on('open', function () {
+      ws.send(JSON.stringify({ type: 10, payload: { action: 'autolaunch', module: fullName } }));
+      setTimeout(function () { try { ws.close(); } catch (e) {} }, 400);
+    });
+    ws.on('error', function () {});
+  } catch (e) {}
+}
+
 server.on('error', function () {});
 server.listen(PORT, '127.0.0.1');
+claimAutolaunch();
