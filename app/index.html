@@ -229,7 +229,7 @@ try{ if(localStorage.getItem('newsOn')==='1') window.addEventListener('load',()=
 })();
 
 /* ---------- TizenBrew native app launch ---------- */
-var SERVICE={module:'gh/Ohadbass/tv-samsung@v1.0.1',port:8099};
+var SERVICE={module:'gh/Ohadbass/tv-samsung@v1.0.2',port:8100};
 var MODULE=(function(){
   var p=location.pathname.split('/');
   return p[1]==='module'&&p[2]?decodeURIComponent(p[2]):SERVICE.module;
@@ -318,9 +318,10 @@ function launchNative(btn){
     showToast('האפליקציה לא מותקנת על הטלוויזיה', 3000);
     return;
   }
-  fetch(serviceUrl('/launch/'+encodeURIComponent(id))).then(function(r){ return r.json(); }).then(function(j){
+  var sid=btn.getAttribute('data-sid');
+  var q=sid && sid!==id ? '?also='+encodeURIComponent(sid) : '';
+  fetch(serviceUrl('/launch/'+encodeURIComponent(id)+q)).then(function(r){ return r.json(); }).then(function(j){
     if(!j || !j.ok){
-      var sid=btn.getAttribute('data-sid');
       if(sid && sid!==id){
         return fetch(serviceUrl('/launch/'+encodeURIComponent(sid))).then(function(r2){ return r2.json(); });
       }

@@ -7,10 +7,10 @@ Same greeting, clock, SomaFM, and ynet ticker as [Ohadbass/tv](https://github.co
 Pin the GitHub tag. TizenBrew loads modules from jsDelivr; unpinned `main` is cached and goes stale.
 
 ```
-Ohadbass/tv-samsung@v1.0.1
+Ohadbass/tv-samsung@v1.0.2
 ```
 
-TizenBrew stores that as `gh/Ohadbass/tv-samsung@v1.0.1`. The welcome page and its service re-assert TizenBrew autolaunch on every open.
+TizenBrew stores that as `gh/Ohadbass/tv-samsung@v1.0.2`. The welcome page and its service re-assert TizenBrew autolaunch on every open. After an app launched from this screen exits, the service relaunches TizenBrew so the welcome screen returns.
 
 ## Room name
 
@@ -22,14 +22,14 @@ TizenBrew opens `appPath` from `package.json` with no query string, so change th
 
 - `app/index.html` — welcome UI (relative `bg.jpg` only)
 - `app/bg.jpg` — background
-- `service/service.js` — Node service on `127.0.0.1:8099` (`/health`, `/apps`, `/launch/<id>`)
+- `service/service.js` — Node service on `127.0.0.1:8100` (`/health`, `/apps`, `/launch/<id>`)
 - `package.json` — TizenBrew manifest
 
 ## Install on the TV
 
 See the remote-control steps in the chat that shipped this tag. After TizenBrew is running:
 
-1. Module Manager → Add GitHub module → `Ohadbass/tv-samsung@v1.0.1`
+1. Module Manager → Add GitHub module → `Ohadbass/tv-samsung@v1.0.2`
 2. Open the module once so it can write TizenBrew autolaunch
 3. TV Settings → General → Smart Features → Autorun Last App → On
 4. Developer Mode Host PC IP must be `127.0.0.1` after TizenBrew is installed, then reboot

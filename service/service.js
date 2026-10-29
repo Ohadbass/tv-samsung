@@ -1,14 +1,44 @@
 // TizenBrew module service. ES5 only: TizenBrew may run this in Node 4.
 // The welcome page has no tizen API and cannot call the TV local REST API
-// (401 from the WebView). This process lists installed apps and launches them.
+// (401 from the WebView). This process lists installed apps, launches them,
+// and brings TizenBrew back when an app launched FROM the welcome screen exits.
 var http = require('http');
 var urlLib = require('url');
 
-var PORT = 8099;
+var PORT = 8100;
 var HAS_TIZEN = typeof tizen !== 'undefined' && tizen.application;
 var CONFIG_PATH = '/home/owner/share/tizenbrewConfig.json';
 var MODULE_NEEDLE = 'Ohadbass/tv-samsung';
-var MODULE_FALLBACK = 'gh/Ohadbass/tv-samsung@v1.0.1';
+var MODULE_FALLBACK = 'gh/Ohadbass/tv-samsung@v1.0.2';
+var TIZENBREW_ID = 'xvvl3S1bvH.TizenBrewStandalone';
+var POLL_MS = 2000;
+var ARM_TIMEOUT_MS = 25000;
+var NEED_MISSED = 2;
+
+// Samsung REST visible flags are reliable on numeric store IDs, not Tizen pkg IDs.
+var ALIASES = {
+  '9Ur5IzDKqV.TizenYouTube': ['111299001912'],
+  '111299001912': ['9Ur5IzDKqV.TizenYouTube'],
+  'org.tizen.netflixapp': ['3201907018807'],
+  'org.tizen.netflix-app': ['3201907018807'],
+  '3201907018807': []
+};
+
+var KNOWN_APP_IDS = [
+  '111299001912',
+  '9Ur5IzDKqV.TizenYouTube',
+  '3201907018807',
+  'MCmYXNxgcu.DisneyPlus',
+  'rJeHak5zRg.Spotify',
+  '3202010022079',
+  '3201506003716',
+  '3201803015997',
+  '3201812017600',
+  '3201905018499',
+  TIZENBREW_ID
+];
+
+var watch = null;
 
 function cors(res, code, obj) {
   res.writeHead(code, {
@@ -19,6 +49,165 @@ function cors(res, code, obj) {
     'Cache-Control': 'no-store'
   });
   res.end(JSON.stringify(obj));
+}
+
+function jsonGet(path, done) {
+  var req = http.request({
+    hostname: '127.0.0.1',
+    port: 8001,
+    path: path,
+    method: 'GET'
+  }, function (r) {
+    var body = '';
+    r.on('data', function (c) { body += c; });
+    r.on('end', function () {
+      if (r.statusCode < 200 || r.statusCode >= 300) return done(null);
+      try { done(JSON.parse(body)); } catch (e) { done(null); }
+    });
+  });
+  req.on('error', function () { done(null); });
+  req.setTimeout(4000, function () { try { req.abort(); } catch (e) {} done(null); });
+  req.end();
+}
+
+function unique(list) {
+  var out = [];
+  var i;
+  for (i = 0; i < list.length; i++) {
+    if (list[i] && out.indexOf(list[i]) === -1) out.push(list[i]);
+  }
+  return out;
+}
+
+function idsFor(id, extra) {
+  var list = [id];
+  if (extra) list.push(extra);
+  var aliases = ALIASES[id];
+  var i;
+  if (aliases) {
+    for (i = 0; i < aliases.length; i++) list.push(aliases[i]);
+  }
+  if (extra && ALIASES[extra]) {
+    for (i = 0; i < ALIASES[extra].length; i++) list.push(ALIASES[extra][i]);
+  }
+  return unique(list);
+}
+
+function isWatched(id) {
+  return !!(watch && watch.ids && watch.ids.indexOf(id) !== -1);
+}
+
+function stopWatch() {
+  if (watch && watch.timer) clearInterval(watch.timer);
+  watch = null;
+}
+
+function isHdmiOrLiveTv() {
+  try {
+    if (typeof webapis === 'undefined') return false;
+    var src = null;
+    if (webapis.tvwindow && typeof webapis.tvwindow.getSource === 'function') {
+      src = webapis.tvwindow.getSource();
+    }
+    if (!src && webapis.tv && webapis.tv.window && typeof webapis.tv.window.getSource === 'function') {
+      src = webapis.tv.window.getSource();
+    }
+    if (!src) return false;
+    var t = src.type;
+    var name = String(src.name || src.id || '');
+    if (/HDMI|COMP|AV|SCART|PC|DVI/i.test(name)) return true;
+    var HDMI = 5;
+    try {
+      if (webapis.avinfo && webapis.avinfo.AvInputType && typeof webapis.avinfo.AvInputType.HDMI === 'number') {
+        HDMI = webapis.avinfo.AvInputType.HDMI;
+      }
+    } catch (e) {}
+    if (typeof t === 'number' && t === HDMI) return true;
+    if (typeof t === 'string' && /HDMI/i.test(t)) return true;
+  } catch (e) {}
+  return false;
+}
+
+function anyVisible(ids, done) {
+  var left = ids.length;
+  var found = false;
+  var ok = false;
+  if (!left) return done(false, false);
+  ids.forEach(function (id) {
+    jsonGet('/api/v2/applications/' + encodeURIComponent(id), function (info) {
+      if (info) {
+        ok = true;
+        if (info.visible === true) found = true;
+      }
+      left -= 1;
+      if (!left) done(found, ok);
+    });
+  });
+}
+
+function otherKnownVisible(done) {
+  var ids = [];
+  var i;
+  for (i = 0; i < KNOWN_APP_IDS.length; i++) {
+    if (!isWatched(KNOWN_APP_IDS[i])) ids.push(KNOWN_APP_IDS[i]);
+  }
+  anyVisible(ids, function (found) { done(found); });
+}
+
+function relaunchWelcome() {
+  stopWatch();
+  launch(TIZENBREW_ID, function () {});
+}
+
+function tickWatch() {
+  if (!watch) return;
+  anyVisible(watch.ids, function (visible, ok) {
+    if (!watch) return;
+    if (!ok) return;
+    var now = Date.now();
+    if (visible) {
+      watch.seenVisible = true;
+      watch.missed = 0;
+      return;
+    }
+    if (!watch.seenVisible) {
+      if (now - watch.started > ARM_TIMEOUT_MS) stopWatch();
+      return;
+    }
+    watch.missed += 1;
+    if (watch.missed < NEED_MISSED) return;
+    if (isHdmiOrLiveTv()) {
+      stopWatch();
+      return;
+    }
+    otherKnownVisible(function (other) {
+      if (!watch) return;
+      if (other) {
+        stopWatch();
+        return;
+      }
+      relaunchWelcome();
+    });
+  });
+}
+
+function startWatch(ids) {
+  stopWatch();
+  var filtered = [];
+  var i;
+  for (i = 0; i < ids.length; i++) {
+    if (ids[i] && ids[i] !== TIZENBREW_ID) filtered.push(ids[i]);
+  }
+  filtered = unique(filtered);
+  if (!filtered.length) return;
+  watch = {
+    ids: filtered,
+    seenVisible: false,
+    missed: 0,
+    started: Date.now(),
+    timer: setInterval(tickWatch, POLL_MS)
+  };
+  setTimeout(tickWatch, 400);
 }
 
 function launchRest(id, done) {
@@ -57,10 +246,17 @@ function launch(id, done) {
 
 var server = http.createServer(function (req, res) {
   if (req.method === 'OPTIONS') return cors(res, 204, {});
-  var path = (urlLib.parse(req.url).pathname) || '/';
+  var parsed = urlLib.parse(req.url, true);
+  var path = parsed.pathname || '/';
 
   if (path === '/' || path === '/health') {
-    return cors(res, 200, { ok: true, service: 'tv-samsung', port: PORT, tizen: !!HAS_TIZEN });
+    return cors(res, 200, {
+      ok: true,
+      service: 'tv-samsung',
+      port: PORT,
+      tizen: !!HAS_TIZEN,
+      watch: watch ? { ids: watch.ids, seenVisible: watch.seenVisible, missed: watch.missed } : null
+    });
   }
 
   if (path === '/apps') {
@@ -90,9 +286,13 @@ var server = http.createServer(function (req, res) {
   var m = path.match(/^\/launch\/([^\/?]+)$/);
   if (m) {
     var id = decodeURIComponent(m[1]);
+    var also = parsed.query && parsed.query.also ? String(parsed.query.also) : '';
     return launch(id, function (err, info) {
       if (err) cors(res, 502, { ok: false, id: id, error: String(err && err.message ? err.message : err) });
-      else cors(res, 200, { ok: true, id: id, info: info });
+      else {
+        startWatch(idsFor(id, also));
+        cors(res, 200, { ok: true, id: id, info: info, watch: watch ? watch.ids : [] });
+      }
     });
   }
 
