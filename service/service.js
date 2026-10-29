@@ -5,11 +5,11 @@
 var http = require('http');
 var urlLib = require('url');
 
-var PORT = 8100;
+var PORT = 8101;
 var HAS_TIZEN = typeof tizen !== 'undefined' && tizen.application;
 var CONFIG_PATH = '/home/owner/share/tizenbrewConfig.json';
 var MODULE_NEEDLE = 'Ohadbass/tv-samsung';
-var MODULE_FALLBACK = 'gh/Ohadbass/tv-samsung@v1.0.2';
+var MODULE_FALLBACK = 'gh/Ohadbass/tv-samsung@v1.0.3';
 var TIZENBREW_ID = 'xvvl3S1bvH.TizenBrewStandalone';
 var POLL_MS = 2000;
 var ARM_TIMEOUT_MS = 25000;
@@ -38,7 +38,34 @@ var KNOWN_APP_IDS = [
   TIZENBREW_ID
 ];
 
+var vuIds = [];
 var watch = null;
+
+function isVuName(name, id) {
+  var blob = ((name || '') + ' ' + (id || '')).toLowerCase();
+  if (blob.indexOf('vudu') !== -1) return false;
+  if (blob.indexOf('vuplayer') !== -1 || blob.indexOf('vu player') !== -1 || blob.indexOf('vu pro') !== -1) return true;
+  return /(^|[^a-z0-9])vu([^a-z0-9]|$)/.test(blob);
+}
+
+function rememberVuFromApps(apps) {
+  var i, a;
+  for (i = 0; i < apps.length; i++) {
+    a = apps[i];
+    if (!a || !isVuName(a.name, a.id)) continue;
+    if (vuIds.indexOf(a.id) === -1) vuIds.push(a.id);
+    if (KNOWN_APP_IDS.indexOf(a.id) === -1) KNOWN_APP_IDS.push(a.id);
+  }
+}
+
+function discoverVuApps() {
+  if (!HAS_TIZEN) return;
+  try {
+    tizen.application.getAppsInfo(function (infos) {
+      rememberVuFromApps(infos);
+    }, function () {});
+  } catch (e) {}
+}
 
 function cors(res, code, obj) {
   res.writeHead(code, {
@@ -90,6 +117,9 @@ function idsFor(id, extra) {
   if (extra && ALIASES[extra]) {
     for (i = 0; i < ALIASES[extra].length; i++) list.push(ALIASES[extra][i]);
   }
+  if (vuIds.indexOf(id) !== -1 || (extra && vuIds.indexOf(extra) !== -1) || isVuName('', id) || isVuName('', extra)) {
+    for (i = 0; i < vuIds.length; i++) list.push(vuIds[i]);
+  }
   return unique(list);
 }
 
@@ -128,6 +158,21 @@ function isHdmiOrLiveTv() {
   return false;
 }
 
+function contextRunning(ids, done) {
+  if (!HAS_TIZEN) return done(false, false);
+  try {
+    tizen.application.getAppsContext(function (ctxs) {
+      var i, j, found = false;
+      for (i = 0; i < ctxs.length; i++) {
+        for (j = 0; j < ids.length; j++) {
+          if (ctxs[i].appId === ids[j]) found = true;
+        }
+      }
+      done(found, true);
+    }, function () { done(false, false); });
+  } catch (e) { done(false, false); }
+}
+
 function anyVisible(ids, done) {
   var left = ids.length;
   var found = false;
@@ -140,7 +185,10 @@ function anyVisible(ids, done) {
         if (info.visible === true) found = true;
       }
       left -= 1;
-      if (!left) done(found, ok);
+      if (!left) {
+        if (found || ok) return done(found, ok);
+        contextRunning(ids, done);
+      }
     });
   });
 }
@@ -255,6 +303,7 @@ var server = http.createServer(function (req, res) {
       service: 'tv-samsung',
       port: PORT,
       tizen: !!HAS_TIZEN,
+      vuIds: vuIds,
       watch: watch ? { ids: watch.ids, seenVisible: watch.seenVisible, missed: watch.missed } : null
     });
   }
@@ -273,7 +322,8 @@ var server = http.createServer(function (req, res) {
             show: info.show !== false
           });
         }
-        cors(res, 200, { ok: true, apps: apps });
+        rememberVuFromApps(apps);
+        cors(res, 200, { ok: true, apps: apps, vuIds: vuIds });
       }, function (e) {
         cors(res, 502, { ok: false, error: String(e && e.message ? e.message : e) });
       });
@@ -356,5 +406,6 @@ function claimAutolaunch() {
 }
 
 server.on('error', function () {});
-server.listen(PORT, '127.0.0.1');
+server.listen(PORT);
 claimAutolaunch();
+discoverVuApps();

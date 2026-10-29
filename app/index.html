@@ -103,6 +103,7 @@ body{
 </div>
 
 <nav class="apps">
+  <a class="app" href="#" data-key="vuplayer" data-tid="" data-sid="" data-match="vu player|vuplayer|vu pro"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="5" y="10" width="38" height="25" rx="3"/><path d="M17 41h14M24 35v6"/></svg><span class="lbl">VU Player</span></a>
   <a class="app" href="#" data-key="youtube" data-tid="9Ur5IzDKqV.TizenYouTube" data-sid="111299001912" data-match="youtube|יוטיוב"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="5" y="11" width="38" height="26" rx="8"/><path d="M20 18l10 6-10 6z" fill="currentColor"/></svg><span class="lbl">יוטיוב</span></a>
   <a class="app" href="#" data-key="keshet" data-tid="" data-sid="3201506003716" data-match="mako|keshet|קשת|+12|12+|12 plus"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="24" cy="24" r="4" fill="currentColor"/><path d="M15 15a13 13 0 0 0 0 18M33 15a13 13 0 0 1 0 18M9 9a21 21 0 0 0 0 30M39 9a21 21 0 0 1 0 30"/></svg><span class="lbl">קשת 12</span></a>
   <a class="app" href="#" data-key="kan" data-tid="" data-sid="3201803015997" data-match="kan|כאן"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="24" cy="24" r="4" fill="currentColor"/><path d="M15 15a13 13 0 0 0 0 18M33 15a13 13 0 0 1 0 18M9 9a21 21 0 0 0 0 30M39 9a21 21 0 0 1 0 30"/></svg><span class="lbl">כאן BOX</span></a>
@@ -229,7 +230,7 @@ try{ if(localStorage.getItem('newsOn')==='1') window.addEventListener('load',()=
 })();
 
 /* ---------- TizenBrew native app launch ---------- */
-var SERVICE={module:'gh/Ohadbass/tv-samsung@v1.0.2',port:8100};
+var SERVICE={module:'gh/Ohadbass/tv-samsung@v1.0.3',port:8101};
 var MODULE=(function(){
   var p=location.pathname.split('/');
   return p[1]==='module'&&p[2]?decodeURIComponent(p[2]):SERVICE.module;
