@@ -21,8 +21,12 @@ body{
   font-family:"Frank Ruhl Libre","David","Times New Roman",serif;
   color:var(--navy);
 }
+#bgvid{
+  position:fixed; top:0; left:0; width:100%; height:100%;
+  object-fit:cover; z-index:0; pointer-events:none;
+}
 .side{
-  position:absolute; top:9vh; right:4.5vw; width:22vw;
+  position:absolute; top:9vh; right:4.5vw; width:22vw; z-index:1;
   text-align:right;
   text-shadow:0 0 1.2vw rgba(255,255,255,.85), 0 0 .3vw rgba(255,255,255,.9);
 }
@@ -40,7 +44,7 @@ body{
 }
 .date{font-size:1.25vw; margin-top:.6vw; color:var(--navy)}
 .apps{
-  position:absolute; bottom:3.5vh; left:50%; transform:translateX(-50%);
+  position:absolute; bottom:3.5vh; left:50%; transform:translateX(-50%); z-index:1;
   display:flex; direction:rtl; align-items:center;
 }
 .app{
@@ -92,6 +96,9 @@ body{
 </style>
 </head>
 <body>
+<video id="bgvid" autoplay loop muted playsinline webkit-playsinline preload="auto" poster="bg.jpg" aria-hidden="true">
+  <source src="bg.mp4" type="video/mp4">
+</video>
 <div class="ticker" id="ticker" aria-live="polite"><div class="tag">מבזקי ynet</div><div class="track"><div class="run" id="tickerRun"></div></div></div>
 <div class="side" aria-live="polite">
   <div class="greet" id="greet">ערב טוב</div>
@@ -122,6 +129,19 @@ function tick(){
   dateEl.textContent = d.toLocaleDateString('he-IL',{weekday:'long',day:'numeric',month:'long'});
 }
 tick(); setInterval(tick,10000);
+
+(function(){
+  var v=document.getElementById('bgvid');
+  if(!v) return;
+  function tryPlay(){
+    try{
+      var p=v.play();
+      if(p&&p.catch) p.catch(function(){});
+    }catch(e){}
+  }
+  tryPlay();
+  v.addEventListener('canplay', tryPlay, {once:true});
+})();
 
 /* ---------- Lounge radio (SomaFM, listener-supported, no ads) ---------- */
 const HOSTS=['ice1','ice2','ice4','ice6'];
@@ -230,7 +250,7 @@ try{ if(localStorage.getItem('newsOn')==='1') window.addEventListener('load',()=
 })();
 
 /* ---------- TizenBrew native app launch ---------- */
-var SERVICE={module:'gh/Ohadbass/tv-samsung@v1.0.3',port:8101};
+var SERVICE={module:'gh/Ohadbass/tv-samsung@v1.0.4',port:8101};
 var MODULE=(function(){
   var p=location.pathname.split('/');
   return p[1]==='module'&&p[2]?decodeURIComponent(p[2]):SERVICE.module;

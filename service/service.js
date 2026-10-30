@@ -9,7 +9,7 @@ var PORT = 8101;
 var HAS_TIZEN = typeof tizen !== 'undefined' && tizen.application;
 var CONFIG_PATH = '/home/owner/share/tizenbrewConfig.json';
 var MODULE_NEEDLE = 'Ohadbass/tv-samsung';
-var MODULE_FALLBACK = 'gh/Ohadbass/tv-samsung@v1.0.3';
+var MODULE_FALLBACK = 'gh/Ohadbass/tv-samsung@v1.0.4';
 var TIZENBREW_ID = 'xvvl3S1bvH.TizenBrewStandalone';
 var POLL_MS = 2000;
 var ARM_TIMEOUT_MS = 25000;

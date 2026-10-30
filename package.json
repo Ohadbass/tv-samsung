@@ -1,6 +1,6 @@
 {
   "name": "tv-samsung",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Basson Residence welcome screen for Samsung Tizen TV (TizenBrew app module).",
   "packageType": "app",
   "appName": "Basson",
